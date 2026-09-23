@@ -1,6 +1,6 @@
 # matthoyle.me: project guide
 
-Personal site for **Matthew Hoyle, aka "Mental.Glitch"**: a developer based in South East UK, born ’95.
+Personal site for **Matt Hoyle, aka "Mental.Glitch"**: a developer based in South East UK, born ’95.
 It's one page with a cyberpunk, "digital" look. Live at **https://matthoyle.me/**.
 
 This file is for anyone (human or LLM) picking the project back up. Read **Owner preferences** before
@@ -35,14 +35,14 @@ Only Google Fonts is loaded from outside the site. Everything else is local.
    - Custom cursor (`.cursor-dot` + `.cursor-ring`). Hidden on touch devices (`hover: none`).
 2. **Hero** (`header.hero`):
    - Avatar in a spinning conic-gradient ring.
-   - `h1.name` "Matthew Hoyle". JS splits it into per-letter spans for the flip-in, then a shimmer.
+   - `h1.name` "Matt Hoyle". JS splits it into per-letter spans for the flip-in, then a shimmer.
    - "aka".
    - `.glitch#alias` "Mental.Glitch": RGB-split glitch slices, a flicker, and a periodic character scramble.
 3. **One terminal window** (`section.panel.terminal`). Everything else lives inside it, revealed as a sequence of typed commands:
    - `cat about.txt` → About text (typewriter, with some phrases highlighted yellow).
    - `./socials.sh` → four social link cards (`nav.links#socials`).
    - `ls ~/projects` → `# websites I've built for other people & host myself` + project cards (`.projects-wrap#projects`).
-4. **Footer**: `© <year> Matthew Hoyle`, and nothing else.
+4. **Footer**: `© <year> Matt Hoyle`, and nothing else.
 
 ---
 
@@ -126,6 +126,7 @@ Timings are tuned; the owner asked for the socials to show quickly.
 
 ## Owner preferences (decided, don't undo)
 
+- **Name**: always **"Matt Hoyle"**, never "Matthew". That applies to page text, meta tags, JSON-LD, alt text and docs.
 - **Aesthetic**: cyberpunk, developer or terminal feel, flashy and animated, but **readability comes first**.
 - **Nothing may shift the layout.** The alias scramble used to make the page "shake"; it's fixed by locking `#alias` to the measured width and height of the final text (`lockAliasSize()`). Keep that when touching the alias.
 - **The name must stay on one line on mobile.** `.name` has `white-space: nowrap` and `font-size: clamp(1.25rem, 7.2vw, 4.6rem)`. Per-letter inline-block spans otherwise wrap mid-word. Checked at 320, 360 and 412px.
@@ -140,7 +141,7 @@ Timings are tuned; the owner asked for the socials to show quickly.
 - **Text selection highlight is transparent** (`::selection { background: transparent }`).
 - **Avatar ring** uses only the name's colours (white, cyan, magenta).
 - **Favicon**: an inline SVG data URI in `<head>`. It's a circle with a white → cyan → magenta gradient and a soft, blurred violet crescent on the bottom-right edge ("more purple, but not 50/50").
-- **`<title>`**: "Matthew Hoyle aka Mental.Glitch" (the word "aka", not a dash).
+- **`<title>`**: "Matt Hoyle aka Mental.Glitch" (the word "aka", not a dash).
 - **Terminal commands should fit what they show**: `cat` for text, `./socials.sh` for the visual link buttons, `ls` for the projects list.
 - **The background can be touched only when asked.**
 
