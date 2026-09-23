@@ -281,10 +281,12 @@
     .name {
       font-family: "Orbitron", sans-serif;
       font-weight: 900;
-      font-size: clamp(2.2rem, 7vw, 4.6rem);
+      /* scales with the screen so the full name always fits on one line */
+      font-size: clamp(1.25rem, 7.2vw, 4.6rem);
       letter-spacing: 0.04em;
       line-height: 1;
       text-transform: uppercase;
+      white-space: nowrap;
     }
     .name .char {
       display: inline-block;
@@ -470,7 +472,10 @@
     .term-bar i:nth-child(1) { background: #ff5f57; box-shadow: 0 0 8px #ff5f57; }
     .term-bar i:nth-child(2) { background: #febc2e; box-shadow: 0 0 8px #febc2e; }
     .term-bar i:nth-child(3) { background: #28c840; box-shadow: 0 0 8px #28c840; }
-    .term-bar span { margin-left: auto; margin-right: auto; padding-right: 52px; }
+    .term-bar span {
+      margin-left: auto; margin-right: auto; padding-right: 52px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .term-body {
       padding: 26px 30px 30px;
       font-family: "JetBrains Mono", monospace;
