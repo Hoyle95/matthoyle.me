@@ -80,6 +80,8 @@
 
     html { scroll-behavior: smooth; }
 
+    ::selection { background: transparent; }
+
     body {
       min-height: 100vh;
       background: var(--bg);
@@ -552,10 +554,10 @@
       cursor: none;
     }
     .links.show .link-card { animation: card-in 0.7s cubic-bezier(.2, 1.4, .4, 1) forwards; }
-    .links.show .link-card:nth-child(1) { animation-delay: 0.1s; }
-    .links.show .link-card:nth-child(2) { animation-delay: 0.25s; }
-    .links.show .link-card:nth-child(3) { animation-delay: 0.4s; }
-    .links.show .link-card:nth-child(4) { animation-delay: 0.55s; }
+    .links.show .link-card:nth-child(1) { animation-delay: 0s; }
+    .links.show .link-card:nth-child(2) { animation-delay: 0.07s; }
+    .links.show .link-card:nth-child(3) { animation-delay: 0.14s; }
+    .links.show .link-card:nth-child(4) { animation-delay: 0.21s; }
 
     @keyframes card-in {
       from { opacity: 0; transform: translateY(30px) scale(0.85); }
@@ -831,11 +833,11 @@
       let i = 0;
       (function tick() {
         cmd2.innerHTML = cmd.slice(0, i) + '<span class="caret"></span>';
-        if (i++ < cmd.length) return setTimeout(tick, 60 + Math.random() * 60);
+        if (i++ < cmd.length) return setTimeout(tick, 25 + Math.random() * 25);
         setTimeout(() => {
           cmd2.textContent = cmd;
           socials.classList.add("show");
-        }, 350);
+        }, 120);
       })();
     }
 
@@ -847,8 +849,8 @@
       let i = 0;
       (function tick() {
         renderAbout(aboutText.slice(0, i), true);
-        if (i++ < aboutText.length) return setTimeout(tick, 28 + Math.random() * 40);
-        setTimeout(() => { renderAbout(aboutText, false); showSocials(); }, 400);
+        if (i++ < aboutText.length) return setTimeout(tick, 8 + Math.random() * 12);
+        setTimeout(() => { renderAbout(aboutText, false); showSocials(); }, 150);
       })();
     }
 
@@ -858,12 +860,12 @@
         if (!e.isIntersecting) return;
         e.target.classList.add("visible");
         // wait for the panel's own reveal delay before typing
-        if (e.target.contains(about)) setTimeout(typeAbout, parseFloat(e.target.style.transitionDelay) * 1000 + 500);
+        if (e.target.contains(about)) setTimeout(typeAbout, parseFloat(e.target.style.transitionDelay) * 1000 + 200);
         io.unobserve(e.target);
       });
     }, { threshold: 0.2 });
     document.querySelectorAll(".panel").forEach((p, i) => {
-      p.style.transitionDelay = `${1.9 + i * 0.25}s`;
+      p.style.transitionDelay = `${1.4 + i * 0.25}s`;
       io.observe(p);
       p.addEventListener("transitionend", () => { p.style.transitionDelay = "0s"; }, { once: true });
     });
