@@ -18,13 +18,20 @@ changing anything visual; those are decisions that have already been made and re
 | `images/me.jpg` | JPEG copy of the same photo, used **only** for link previews (Open Graph / Twitter). Some platforms don't reliably show WebP. |
 | `images/projects/*.jpg` | Project thumbnails, 800×500 screenshots taken at a 1280×800 viewport. Made with `tools/capture-thumbnail.ps1`. |
 | `robots.txt`, `sitemap.xml` | For search engines. Bump `<lastmod>` in the sitemap when content changes. |
+| `fonts/*.woff2` | Self-hosted fonts (Latin subsets from Google Fonts, SIL Open Font License): Orbitron 800–900 (one file), Chakra Petch 400, JetBrains Mono 400. Declared with `@font-face` at the top of the `<style>`, and preloaded in `<head>`. |
+| `js/count.js` | GoatCounter's analytics script, self-hosted (GoatCounter's docs allow this; see below). |
 | `tools/serve.ps1` | Local web server (`http://localhost:8765/`) for testing in a browser. |
 | `tools/capture-thumbnail.ps1` | Screenshots a live site into `images/projects/`. |
 | `tools/device-test.ps1` | Emulates 10 phones, tablets and desktops (with touch and a slowed processor on phones) and checks the page on each. See **Testing**. |
 
-Only two things load from outside the site: Google Fonts, and the **GoatCounter** analytics script
-(`<script data-goatcounter="https://hoyle95.goatcounter.com/count" async src="//gc.zgo.at/count.js">` in `<head>`;
-stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the analytics script when editing `<head>`.
+**Everything the page loads is self-hosted.** The only outside connection is the GoatCounter pageview report, sent to
+`https://hoyle95.goatcounter.com/count` (stats at https://hoyle95.goatcounter.com/). Keep it that way. It was measured
+on a simulated 4G phone: first paint was ~14% faster and full load ~49% faster than with Google Fonts and `gc.zgo.at`.
+- **Analytics:** `<script data-goatcounter="https://hoyle95.goatcounter.com/count" async src="js/count.js">` in `<head>`.
+  GoatCounter's docs ("Host count.js somewhere else") allow self-hosting; the `/count` endpoint is guaranteed to stay
+  compatible. The `data-goatcounter` attribute is what tells it where to report, so keep it. The one downside is no
+  automatic updates, so refresh `js/count.js` from https://gc.zgo.at/count.js now and then. It doesn't count `localhost`.
+- **Fonts:** see **Fonts** below.
 
 ---
 
@@ -35,7 +42,7 @@ stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the a
    - `.blob.one/two/three`: large blurred violet, magenta and cyan glows drifting slowly.
    - `.grid-floor`: synthwave perspective grid scrolling along the bottom.
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
-   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.3` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
+   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.4` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
      - **`RESPONSE` and `LOAD`** are real, measured once per visit with the Navigation Timing API. `RESPONSE` is the server response time (`responseStart − requestStart`); it shows `CACHED` if the page came from the browser cache. `LOAD` is the full page load (`loadEventEnd`). Both are shown in ms, or in seconds from 1000ms.
      - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS` / `showSignal()`). Cached counts as full signal.
 
@@ -93,9 +100,11 @@ Other fixed colours:
   - Socials: Instagram `#ff3d8b`, YouTube `#ff2a2a`, Twitch `#a970ff`, Discord `#6f7dff`.
   - Projects: each card sets `style="--brand: …"` inline from that site's own theme colour.
 
-### Fonts (Google Fonts)
+### Fonts (self-hosted)
 
-Use the CSS variables `--display`, `--body` and `--mono` rather than repeating font names. The one exception is the rain's glyph sheet (`buildAtlas()` in the JS), which can't read CSS variables. Only the weights in use are downloaded. If you add a new weight, add it to the Google Fonts URL too.
+Self-hosted in `fonts/` (no Google Fonts requests). Each has an `@font-face` with Google's Latin `unicode-range` and `font-display: swap`, plus a `<link rel="preload">`. Only the weights in use are included. If you need a new weight or character set, download that woff2 from Google Fonts (read the `css2?family=…` stylesheet for the file URL), add it to `fonts/`, and add an `@font-face` for it.
+
+Use the CSS variables `--display`, `--body` and `--mono` rather than repeating font names. The one exception is the rain's glyph sheet (`buildAtlas()` in the JS), which can't read CSS variables. The rain waits for the fonts (`document.fonts.ready`), but only up to 1.5s. After that it starts with fallback glyphs and redraws them when the font arrives.
 
 | Font | Role |
 |---|---|
@@ -153,7 +162,7 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
 
 ### Accessibility and fallbacks (keep these working)
 
-- **`prefers-reduced-motion`**: all animation is effectively off, and commands and outputs show instantly.
+- **`prefers-reduced-motion`** (a deliberate OS setting, off by default everywhere): there is no intro, no dim overlay, no entrance effects and no delays (`--intro: 0s`; all delays are forced to 0). The whole page fades in once (`page-fade`, 0.5s), and commands and outputs show instantly.
 - **`<noscript>` styles**: everything is visible without JS.
 - **About text and command text** are written into the HTML (for crawlers and no-JS visitors). JS reads them from the HTML, clears them on load and re-types them, so the HTML is the single source of truth.
 - **Decorative layers** are `aria-hidden`. The About section has `aria-label="About me"`.

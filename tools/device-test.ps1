@@ -20,7 +20,13 @@ $devices = @(
   @{ n = "Desktop 1080p";       w = 1920; h = 1080; d = 1;     m = $false; cpu = 1 }
   @{ n = "Desktop 1440p";       w = 2560; h = 1440; d = 1;     m = $false; cpu = 1 }
 )
-if ($Only.Count) { $devices = $devices | Where-Object { $Only -contains $_.n } }
+# "powershell -File" passes -Only "a","b" as one "a,b" string, so split on commas
+$Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+if ($Only.Count) {
+  $allNames = $devices | ForEach-Object { $_.n }
+  $devices = @($devices | Where-Object { $Only -contains $_.n })
+  if (-not $devices.Count) { throw "No device matches -Only '$($Only -join "', '")'. Device names: $($allNames -join ', ')" }
+}
 
 $initScript = @'
 window.__errors = [];
@@ -39,7 +45,6 @@ $checks = @'
   const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
   const hudVisible = s => getComputedStyle(q(s)).display !== 'none';
   const tl = box('.hud.tl .hud-text'), tr = box('.hud.tr .hud-text'), bl = box('.hud.bl .hud-text'), br = box('.hud.br .hud-text');
-  const gaps = __frames.slice(1).map((t, i) => t - __frames[i]).filter(g => g > 0);
   const introGaps = __frames.slice(1).map((t, i) => [__frames[i], t - __frames[i]]).filter(([s]) => s < 2500).map(([, g]) => g);
   const res = {
     errors: __errors.length ? __errors.join(' ; ') : 'none',
@@ -55,7 +60,7 @@ $checks = @'
     introJankFrames: introGaps.filter(g => g > 50).length,
     slowFrames: __frames.slice(1).map((t, i) => [Math.round(__frames[i]), Math.round(t - __frames[i])]).filter(([, g]) => g > 50).map(([s, g]) => g + 'ms@' + s).join(' '),
     firstFrameAt: Math.round(__frames[1] || 0),
-    bottomCornersReadable: ['.hud.bl', '.hud.br'].every(s => { const h = box(s), p = box('.panel'); const underContent = h.left < p.right && p.left < h.right; return !underContent || getComputedStyle(q(s)).backgroundColor !== 'rgba(0, 0, 0, 0)'; }),
+    bottomCornersReadable: ['.hud.bl', '.hud.br'].every(s => { const h = box(s), p = box('.panel'); const underContent = h.left < p.right && p.left < h.right; const backing = getComputedStyle(q(s), '::after'); return !underContent || (backing.content !== 'none' && backing.backgroundColor !== 'rgba(0, 0, 0, 0)' && backing.opacity === '1'); }),
     hudHasText: q('#server-time').textContent.startsWith('SERVER ') && q('#load').textContent !== '--',
   };
   scrollTo(0, document.documentElement.scrollHeight);
@@ -79,31 +84,42 @@ try {
   $sock = New-Object Net.WebSockets.ClientWebSocket
   $sock.ConnectAsync([Uri]$ws, [Threading.CancellationToken]::None).Wait()
   $script:id = 0
+  $buf = New-Object byte[] 4194304
   function Send-Cdp($method, $params) {
     $script:id++
     $bytes = [Text.Encoding]::UTF8.GetBytes((@{ id = $script:id; method = $method; params = $params } | ConvertTo-Json -Depth 6 -Compress))
     $sock.SendAsync([ArraySegment[byte]]$bytes, 'Text', $true, [Threading.CancellationToken]::None).Wait()
     while ($true) {
       $ms = New-Object IO.MemoryStream
-      do { $buf = New-Object byte[] 4194304; $res = $sock.ReceiveAsync([ArraySegment[byte]]$buf, [Threading.CancellationToken]::None).Result; $ms.Write($buf, 0, $res.Count) } while (-not $res.EndOfMessage)
+      do { $res = $sock.ReceiveAsync([ArraySegment[byte]]$buf, [Threading.CancellationToken]::None).Result; $ms.Write($buf, 0, $res.Count) } while (-not $res.EndOfMessage)
       $obj = [Text.Encoding]::UTF8.GetString($ms.ToArray()) | ConvertFrom-Json
       if ($obj.id -eq $script:id) { return $obj }
     }
   }
   [void](Send-Cdp 'Page.enable' @{})
   [void](Send-Cdp 'Page.addScriptToEvaluateOnNewDocument' @{ source = $initScript })
-  if ($ReducedMotion) { [void](Send-Cdp 'Emulation.setEmulatedMedia' @{ features = @(@{ name = 'prefers-reduced-motion'; value = 'reduce' }) }) }
   if ($NoJs) { [void](Send-Cdp 'Emulation.setScriptExecutionDisabled' @{ value = $true }) }
   foreach ($d in $devices) {
     [void](Send-Cdp 'Emulation.setDeviceMetricsOverride' @{ width = $d.w; height = $d.h; deviceScaleFactor = $d.d; mobile = $d.m })
     [void](Send-Cdp 'Emulation.setTouchEmulationEnabled' @{ enabled = $d.m; maxTouchPoints = $(if ($d.m) { 5 } else { 1 }) })
-    if (-not $ReducedMotion) {
-      $hover = if ($d.m) { 'none' } else { 'hover' }
-      [void](Send-Cdp 'Emulation.setEmulatedMedia' @{ features = @(@{ name = 'hover'; value = $hover }, @{ name = 'pointer'; value = $(if ($d.m) { 'coarse' } else { 'fine' }) }) })
-    }
+    # one call with every media feature: setEmulatedMedia replaces the whole list each time
+    $features = @(@{ name = 'hover'; value = $(if ($d.m) { 'none' } else { 'hover' }) }, @{ name = 'pointer'; value = $(if ($d.m) { 'coarse' } else { 'fine' }) })
+    if ($ReducedMotion) { $features += @{ name = 'prefers-reduced-motion'; value = 'reduce' } }
+    [void](Send-Cdp 'Emulation.setEmulatedMedia' @{ features = $features })
     [void](Send-Cdp 'Emulation.setCPUThrottlingRate' @{ rate = $d.cpu })
     [void](Send-Cdp 'Page.navigate' @{ url = "http://localhost:8765/$Page" })
-    Start-Sleep -Seconds 12
+    # wait until the terminal sequence has finished (projects shown), then for the card animations; give up after 20s
+    Start-Sleep -Seconds 1
+    if ($NoJs) { Start-Sleep -Seconds 2 } else {
+      $waited = Measure-Command {
+        for ($t = 0; $t -lt 40; $t++) {
+          $done = (Send-Cdp 'Runtime.evaluate' @{ expression = "!!document.querySelector('#projects.show')"; returnByValue = $true }).result.result.value
+          if ($done) { break }
+          Start-Sleep -Milliseconds 500
+        }
+      }
+      Start-Sleep -Milliseconds 1500
+    }
     if ($NoJs) {
       $v = (Send-Cdp 'Runtime.evaluate' @{ expression = "JSON.stringify({ aboutText: document.querySelector('#about').textContent.length, panelOpacity: getComputedStyle(document.querySelector('.panel')).opacity, cardsOpacity: [...document.querySelectorAll('.link-card, .project-card')].map(c => getComputedStyle(c).opacity).join(''), cmds: [...document.querySelectorAll('.queued-cmd')].map(p => getComputedStyle(p).visibility + ':' + p.textContent.trim()).join(' | '), hudText: getComputedStyle(document.querySelector('.hud-text')).opacity, name: document.querySelector('#name').textContent })"; returnByValue = $true }).result.result.value
     } else {

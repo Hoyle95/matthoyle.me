@@ -47,12 +47,28 @@
   </script>
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='0.5' stop-color='%2300f0ff'/%3E%3Cstop offset='1' stop-color='%23ff2bd6'/%3E%3C/linearGradient%3E%3Cfilter id='b' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='3'/%3E%3C/filter%3E%3Cmask id='m'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23fff'/%3E%3Ccircle cx='11' cy='11' r='13' fill='%23000' filter='url(%23b)'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='url(%23g)'/%3E%3Ccircle cx='16' cy='16' r='15' fill='%238a2bff' opacity='0.9' mask='url(%23m)'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800;900&family=Chakra+Petch&family=JetBrains+Mono&display=swap" rel="stylesheet">
-  <script data-goatcounter="https://hoyle95.goatcounter.com/count"
-          async src="//gc.zgo.at/count.js"></script>
+  <!-- Self-hosted (Latin subsets from Google Fonts, SIL Open Font License); preloaded as all three are used above the fold -->
+  <link rel="preload" href="fonts/orbitron-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/chakra-petch-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- GoatCounter's count.js, self-hosted as its docs allow; pageviews still go to the endpoint in data-goatcounter -->
+  <script data-goatcounter="https://hoyle95.goatcounter.com/count" async src="js/count.js"></script>
   <style>
+    @font-face {
+      font-family: "Orbitron"; font-weight: 800 900; font-display: swap;
+      src: url("fonts/orbitron-latin.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Chakra Petch"; font-weight: 400; font-display: swap;
+      src: url("fonts/chakra-petch-latin.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "JetBrains Mono"; font-weight: 400; font-display: swap;
+      src: url("fonts/jetbrains-mono-latin.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
     :root {
       --bg: #07030f; --cyan: #00f0ff; --magenta: #ff2bd6; --violet: #8a2bff; --yellow: #ffe600;
       --text: #eae6ff; --muted: #a79fc9; --border: rgba(255, 255, 255, .12);
@@ -281,11 +297,12 @@
       content: ""; position: absolute; width: 18px; height: 18px; border: 0 solid var(--magenta);
       animation: fade-in .25s ease both, hud-open .75s cubic-bezier(.65, 0, .25, 1) .2s both;
     }
-    /* each bracket starts 40px from the screen centre (--dx / --dy point it back towards the middle) */
+    /* Each bracket starts 40px from the screen centre (--dx / --dy point it back towards the middle).
+       --view-w / --view-h are the visible viewport (no scrollbar, follows mobile toolbars), set by JS; vw/vh without it. */
     @keyframes hud-open {
       from {
-        transform: translate(calc(var(--dx) * (50vw - var(--edge) - 40px)), calc(var(--dy) * (50vh - var(--edge) - 40px)));
-        transform: translate(calc(var(--dx) * (50vw - var(--edge) - 40px)), calc(var(--dy) * (50dvh - var(--edge) - 40px)));
+        transform: translate(calc(var(--dx) * (var(--view-w, 100vw) / 2 - var(--edge) - 40px)),
+                             calc(var(--dy) * (var(--view-h, 100vh) / 2 - var(--edge) - 40px)));
       }
     }
     .hud.tl { top: var(--edge); left: var(--edge); }                       .hud.tl::before { --dx: 1;  --dy: 1;  top: 0; left: 0; border-width: 2px 0 0 2px; }
@@ -294,14 +311,16 @@
     .hud.br { bottom: var(--edge); right: var(--edge); text-align: right; } .hud.br::before { --dx: -1; --dy: -1; bottom: 0; right: 0; border-width: 0 2px 2px 0; }
     .hud .ok { color: #39ff88; }
     /* Below ~1240px the 920px terminal reaches under the bottom corners, so give them a backing (text scrolling under
-       them stays readable). It fades in with the HUD text. On phones, also leave room under the footer. */
+       them stays readable). It's its own layer, fading in (opacity) with the HUD text. On phones, also leave room under the footer. */
     @media (max-width: 1260px) {
-      .hud.bl, .hud.br { border-radius: 6px; animation: hud-backing .6s ease var(--intro) both; }
+      .hud.bl::after, .hud.br::after {
+        content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 6px; background: rgba(7, 3, 15, .82);
+        opacity: 0; animation: fade-in .6s ease var(--intro) forwards;
+      }
     }
     @media (max-width: 700px) {
       body > footer { padding-bottom: 84px; }
     }
-    @keyframes hud-backing { from { background: transparent; } to { background: rgba(7, 3, 15, .82); } }
     /* phones: tighten all four corners so the clock lines can't run into "SYS://MENTAL.GLITCH" / "● ONLINE" */
     @media (max-width: 440px) {
       :root { --edge: 10px; }
@@ -390,10 +409,17 @@
       .avatar-wrap { width: 170px; height: 170px; }
       .aka::before, .aka::after { width: 20px; margin: 0 8px; }
     }
+    /* Reduced motion (a deliberate OS setting): no intro, no entrance effects, no delays; the whole page just fades in once */
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-      .noise, .scanlines::after { display: none; }
+      :root { --intro: 0s; }
+      *, *::before, *::after {
+        animation-duration: .001ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important;
+        transition-duration: .001ms !important; transition-delay: 0s !important;
+      }
+      .noise, .scanlines::after, .intro-dim { display: none; }
+      body { animation: page-fade .5s ease both !important; }
     }
+    @keyframes page-fade { from { opacity: 0; } }
   </style>
   <noscript>
     <style>
@@ -415,7 +441,7 @@
   <div class="intro-dim" aria-hidden="true"></div>
   <div class="hud tl" aria-hidden="true"><span class="hud-text">SYS://MENTAL.GLITCH<br><span class="ok">● ONLINE</span></span></div>
   <div class="hud tr" aria-hidden="true"><span class="hud-text"><span id="server-time">SERVER --:--:--</span><br><span id="client-time">CLIENT --:--:--</span><br><span id="time-gap"></span></span></div>
-  <div class="hud bl" aria-hidden="true"><span class="hud-text">BUILD v1.3<br>FPS <span id="fps">--</span></span></div>
+  <div class="hud bl" aria-hidden="true"><span class="hud-text">BUILD v1.4<br>FPS <span id="fps">--</span></span></div>
   <div class="hud br" aria-hidden="true"><span class="hud-text">LOAD <span id="load">--</span><br>RESPONSE <span id="response">--</span><br>SIGNAL <span id="signal" class="ok">▮▮▮▮▯</span></span></div>
   <div class="cursor-dot" aria-hidden="true"></div>
   <div class="cursor-ring" aria-hidden="true"></div>
@@ -507,7 +533,18 @@
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const finePointer = matchMedia("(hover: hover)").matches;
     const CARET = '<span class="caret"></span>';
-    const INTRO = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--intro")); // seconds, from CSS
+    // Intro length in seconds, read from the CSS --intro (accepts "0.95s" or "950ms"; 0 under reduced motion)
+    const introCss = getComputedStyle(document.documentElement).getPropertyValue("--intro").trim();
+    const INTRO = (parseFloat(introCss) || 0) / (introCss.endsWith("ms") ? 1000 : 1);
+
+    // Visible viewport size for the intro's centred start frame (excludes scrollbars, follows mobile toolbars)
+    const setViewSize = () => {
+      const root = document.documentElement;
+      root.style.setProperty("--view-w", `${root.clientWidth}px`);
+      root.style.setProperty("--view-h", `${root.clientHeight}px`);
+    };
+    setViewSize();
+    addEventListener("resize", setViewSize);
     $("year").textContent = new Date().getFullYear();
 
     // Name: one span per letter for the flip-in
@@ -609,7 +646,7 @@
       }
     }, { rootMargin: "0px 0px -60px 0px" });
     document.querySelectorAll(".panel").forEach((p, i) => {
-      p.dataset.revealAt = INTRO + 1.4 + i * 0.25;
+      p.dataset.revealAt = reduceMotion ? 0 : INTRO + 1.4 + i * 0.25;
       io.observe(p);
     });
 
@@ -771,15 +808,22 @@
     }
     resize();
     addEventListener("resize", resize);
-    // Build the glyph sheet once the font has loaded (building it earlier would mean doing it twice), then start the
-    // rain. It begins a moment later, during the dimmed intro, which saves slow phones a lot of work while loading.
-    document.fonts.ready.then(() => {
+    // Start the rain once the font has loaded (so the glyph sheet is usually built once, during the dimmed intro).
+    // If fonts are slow or blocked, start after 1.5s with fallback glyphs anyway and rebuild when the font arrives.
+    let last = 0, frames = 0, fpsTime = 0, rainStarted = false;
+    function startRain() {
+      if (rainStarted) return;
+      rainStarted = true;
       buildAtlas();
-      lockAliasSize();
+      last = fpsTime = performance.now();
       requestAnimationFrame(draw);
+    }
+    setTimeout(startRain, 1500);
+    document.fonts.ready.then(() => {
+      if (rainStarted) buildAtlas(); else startRain();
+      lockAliasSize();
     });
 
-    let last = performance.now(), frames = 0, fpsTime = last;
     function draw(now) {
       const step = Math.min((now - last) / (1000 / 60), 3); // speed is tuned for 60fps; scale for other refresh rates
       last = now;

@@ -5,7 +5,8 @@ param([int]$Port = 8765)
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $types = @{ ".html" = "text/html; charset=utf-8"; ".jpg" = "image/jpeg"; ".webp" = "image/webp";
-            ".png" = "image/png"; ".svg" = "image/svg+xml"; ".xml" = "application/xml"; ".txt" = "text/plain" }
+            ".png" = "image/png"; ".svg" = "image/svg+xml"; ".xml" = "application/xml"; ".txt" = "text/plain";
+            ".woff2" = "font/woff2"; ".js" = "text/javascript; charset=utf-8" }
 
 $listener = New-Object Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
