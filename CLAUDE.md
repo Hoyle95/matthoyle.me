@@ -13,7 +13,8 @@ changing anything visual; those are decisions that have already been made and re
 | Path | What it is |
 |---|---|
 | `index.html` | The whole site. HTML, CSS (in `<style>`) and JS (in `<script>` at the end) in one file. No build step, no dependencies. |
-| `images/me.webp` | Profile photo shown on the page. |
+| `images/me.webp` | Profile photo, full size (1000px). |
+| `images/me-512.jpg` | 512px copy of the photo. Chosen via `srcset` for most screens, since it's shown at 170–220px. Regenerate it if the photo changes. |
 | `images/me.jpg` | JPEG copy of the same photo, used **only** for link previews (Open Graph / Twitter). Some platforms don't reliably show WebP. |
 | `images/projects/*.jpg` | Project thumbnails, 800×500 screenshots taken at a 1280×800 viewport. Made with `tools/capture-thumbnail.ps1`. |
 | `robots.txt`, `sitemap.xml` | For search engines. Bump `<lastmod>` in the sitemap when content changes. |
@@ -33,8 +34,22 @@ stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the a
    - `.blob.one/two/three`: large blurred violet, magenta and cyan glows drifting slowly.
    - `.grid-floor`: synthwave perspective grid scrolling along the bottom.
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
-   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, live clock (`#clock`), `BUILD v1.0` and FPS (`#fps`), and `SIGNAL` bars. The bottom two are hidden under 700px.
-     - The clock always shows the owner's UK time (`timeZone: "Europe/London"`, switching between GMT and BST automatically), whatever the visitor's own time zone.
+   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.2` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
+     - **`RESPONSE` and `LOAD`** are real, measured once per visit with the Navigation Timing API. `RESPONSE` is the server response time (`responseStart − requestStart`); it shows `CACHED` if the page came from the browser cache. `LOAD` is the full page load (`loadEventEnd`). Both are shown in ms, or in seconds from 1000ms.
+     - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS` / `showSignal()`). Cached counts as full signal.
+
+       | Response | Bars | Colour |
+       |---|---|---|
+       | under 100ms | 5 | green |
+       | under 200ms | 4 | green |
+       | under 400ms | 3 | yellow |
+       | under 800ms | 2 | orange |
+       | slower | 1 | red | The bottom two are hidden under 700px. At 440px and below, the HUD gets a slightly smaller font and tighter spacing so the top corners don't collide (checked at 320px with the longest time zone).
+     - **Top-right clock** (three lines, updated every second):
+       - `#server-time` shows the owner's UK time, e.g. `SERVER 16:44:09 UTC+1`.
+       - `#client-time` shows the visitor's local time, e.g. `CLIENT 11:44:09 UTC-4`.
+       - `#time-gap` shows the difference, e.g. `5H BEHIND`, `4H 30M AHEAD` or `SAME TIME`.
+     - **Daylight saving is automatic. Don't hard-code offsets, and there's no need for a time API.** The UK offset is worked out every tick from the browser's built-in `Europe/London` rules (`ukTime.formatToParts`). It was checked to the second at both UK changes: 01:59:59 BST → 01:00:00 GMT, and 00:59:59 GMT → 02:00:00 BST. The one thing it relies on is the visitor's device clock being roughly right.
    - Custom cursor (`.cursor-dot` + `.cursor-ring`). Hidden on touch devices (`hover: none`).
 2. **Hero** (`header.hero`):
    - Avatar in a spinning conic-gradient ring.
@@ -44,7 +59,7 @@ stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the a
 3. **One terminal window** (`section.panel`). Everything else lives inside it, revealed as a sequence of typed commands:
    - `cat about.txt` → About text (typewriter, with some phrases highlighted yellow).
    - `./socials.sh` → four social link cards (`nav.links#socials`).
-   - `ls ~/projects` → `# websites I've built for other people & host myself` + project cards (`.projects-wrap#projects`).
+   - `ls ~/projects` → `# websites I've built for other people` + project cards (`.projects-wrap#projects`).
 4. **Footer**: `© <year> Matt Hoyle`, and nothing else.
 
 ---
@@ -74,13 +89,13 @@ Other fixed colours:
 
 ### Fonts (Google Fonts)
 
-Use the CSS variables `--display`, `--body` and `--mono` rather than repeating font names. The one exception is the rain canvas (`FONT` in the JS), which can't read CSS variables.
+Use the CSS variables `--display`, `--body` and `--mono` rather than repeating font names. The one exception is the rain's glyph sheet (`buildAtlas()` in the JS), which can't read CSS variables. Only the weights in use are downloaded. If you add a new weight, add it to the Google Fonts URL too.
 
 | Font | Role |
 |---|---|
-| **Orbitron** (500/800/900) | Display: the name, alias and card titles. Always uppercase or short. |
-| **Chakra Petch** (400/500/700) | Body text, including the About paragraph. |
-| **JetBrains Mono** (400/700) | Anything "terminal": prompts, commands, comments, handles, tags, HUD, browser bars. |
+| **Orbitron** (800/900) | Display: the name, alias and card titles. Always uppercase or short. |
+| **Chakra Petch** (400) | Body text, including the About paragraph. |
+| **JetBrains Mono** (400) | Anything "terminal": prompts, commands, comments, handles, tags, HUD, browser bars. |
 
 ### Components and conventions
 
@@ -90,6 +105,10 @@ Use the CSS variables `--display`, `--body` and `--mono` rather than repeating f
   ```
   Prompt lines that appear later in the sequence also get `queued-cmd`. The command is the line's last `<span>`, which JS clears and re-types.
 - **Terminal comment**: `<p class="term-comment"># …</p>` (muted mono).
+- **Terminal border pulse** (`.panel-border`): a cyan band with a fading tail sweeps diagonally from the top-left corner to the bottom-right, lighting the whole border. It's a 300% gradient layer moved with `transform`.
+  - **Timing:** it fades in at the top-left, travels at a steady (linear) speed, and fades out as its head lands on the bottom-right. It then pauses, and each cycle is 4.5s.
+  - **Don't ease it:** with `ease-in-out`, the pulse slowed as it reached the bottom-right corner and its dim tail lingered there, which looked broken.
+  - **Keep the ring a whole number of pixels** (`padding: 2px`). At 1.5px the browser snapped the inner edge unevenly, making the bottom-right corner render thinner and less round than the top-left.
 - **Link card** (`a.link-card.<platform>`): icon, name and handle. Inline SVG icons use `fill: currentColor`. Hover effects:
   - 3D tilt that follows the mouse
   - radial spotlight
@@ -142,8 +161,9 @@ Timings are tuned; the owner asked for the socials to show quickly.
   - the arrows on social buttons
   - the orbiting dots around the avatar
   - "made with ♥ & a little glitch" in the footer
+- **Performance (mobile especially)**: animate `transform` and `opacity` only, never `top`, `background-position` and the like, which repaint every frame. Examples already on the page: the grid floor, scan line, terminal border (`.panel-border`) and grain. The rain draws glyphs from a pre-rendered sprite sheet (`buildAtlas()`) instead of calling `fillText` every frame. Any optimisation must leave the look unchanged.
 - **Text selection highlight is transparent** (`::selection { background: transparent }`).
-- **Avatar ring** uses only the name's colours (white, cyan, magenta).
+- **Avatar ring** uses only the name's colours (white, cyan, magenta). The sharp ring (`::before`) spins by animating the gradient's angle (`@property --ring-angle`), **not** by rotating the element. With `transform: rotate`, mobile browsers dropped the sharp ring after fast scrolling and left only the blurred glow. The blurred glow (`::after`) does rotate with a transform, which is cheaper and safe. Both take 4s, so they stay in step.
 - **Avatar hover glitch** runs as a short burst (~1.6s, `img-glitch` × 4), not infinitely. It replays each time the mouse re-enters.
 - **Favicon**: an inline SVG data URI in `<head>`. It's a circle with a white → cyan → magenta gradient and a soft, blurred violet crescent on the bottom-right edge ("more purple, but not 50/50").
 - **`<title>`**: "Matt Hoyle aka Mental.Glitch" (the word "aka", not a dash).
