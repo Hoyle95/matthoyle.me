@@ -20,7 +20,9 @@ changing anything visual; those are decisions that have already been made and re
 | `tools/serve.ps1` | Local web server (`http://localhost:8765/`) for testing in a browser. |
 | `tools/capture-thumbnail.ps1` | Screenshots a live site into `images/projects/`. |
 
-Only Google Fonts is loaded from outside the site. Everything else is local.
+Only two things load from outside the site: Google Fonts, and the **GoatCounter** analytics script
+(`<script data-goatcounter="https://hoyle95.goatcounter.com/count" async src="//gc.zgo.at/count.js">` in `<head>`;
+stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the analytics script when editing `<head>`.
 
 ---
 
@@ -31,14 +33,15 @@ Only Google Fonts is loaded from outside the site. Everything else is local.
    - `.blob.one/two/three`: large blurred violet, magenta and cyan glows drifting slowly.
    - `.grid-floor`: synthwave perspective grid scrolling along the bottom.
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
-   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, live UK clock (`#clock`), build and FPS (`#fps`), signal. The bottom two are hidden under 700px.
+   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, live clock (`#clock`), `BUILD v1.0` and FPS (`#fps`), and `SIGNAL` bars. The bottom two are hidden under 700px.
+     - The clock always shows the owner's UK time (`timeZone: "Europe/London"`, switching between GMT and BST automatically), whatever the visitor's own time zone.
    - Custom cursor (`.cursor-dot` + `.cursor-ring`). Hidden on touch devices (`hover: none`).
 2. **Hero** (`header.hero`):
    - Avatar in a spinning conic-gradient ring.
    - `h1.name` "Matt Hoyle". JS splits it into per-letter spans for the flip-in, then a shimmer.
    - "aka".
    - `.glitch#alias` "Mental.Glitch": RGB-split glitch slices, a flicker, and a periodic character scramble.
-3. **One terminal window** (`section.panel.terminal`). Everything else lives inside it, revealed as a sequence of typed commands:
+3. **One terminal window** (`section.panel`). Everything else lives inside it, revealed as a sequence of typed commands:
    - `cat about.txt` → About text (typewriter, with some phrases highlighted yellow).
    - `./socials.sh` → four social link cards (`nav.links#socials`).
    - `ls ~/projects` → `# websites I've built for other people & host myself` + project cards (`.projects-wrap#projects`).
@@ -59,7 +62,6 @@ Only Google Fonts is loaded from outside the site. Everything else is local.
 | `--yellow` | `#ffe600` | Highlighted words in the About text only |
 | `--text` | `#eae6ff` | Body text |
 | `--muted` | `#a79fc9` | Secondary text: handles, descriptions, comments |
-| `--glass` | `rgba(20,10,40,.45)` | Panel background (plus `backdrop-filter: blur`) |
 | `--border` | `rgba(255,255,255,.12)` | Hairline borders |
 
 Other fixed colours:
@@ -71,6 +73,8 @@ Other fixed colours:
   - Projects: each card sets `style="--brand: …"` inline from that site's own theme colour.
 
 ### Fonts (Google Fonts)
+
+Use the CSS variables `--display`, `--body` and `--mono` rather than repeating font names. The one exception is the rain canvas (`FONT` in the JS), which can't read CSS variables.
 
 | Font | Role |
 |---|---|
@@ -84,7 +88,7 @@ Other fixed colours:
   ```html
   <p class="term-line"><span class="prompt">matt@glitch<b>:~$</b></span> command</p>
   ```
-  Prompt lines that appear later in the sequence also get `queued-cmd` and a typed `<span data-text="…">`.
+  Prompt lines that appear later in the sequence also get `queued-cmd`. The command is the line's last `<span>`, which JS clears and re-types.
 - **Terminal comment**: `<p class="term-comment"># …</p>` (muted mono).
 - **Link card** (`a.link-card.<platform>`): icon, name and handle. Inline SVG icons use `fill: currentColor`. Hover effects:
   - 3D tilt that follows the mouse
@@ -108,18 +112,18 @@ Timings are tuned; the owner asked for the socials to show quickly.
 | 1.5s | "aka" fades up |
 | 1.8s | Alias fades up. It scrambles at 1.8s, then every 5s and on hover. |
 | 1.4s | Terminal panel fades in (`data-revealAt`, counted from page load; panels scrolled to later appear immediately) |
-| +0.2s | About types at 8–20ms/char |
+| +0.2s | About types at 9–18ms/char |
 | +0.15s | `./socials.sh` types at 25–50ms/char. Output appears 120ms later, cards staggered 0.07s. |
 | +0.45s | `ls ~/projects` types, then project cards appear (staggered 0.07s) |
 
-- **Sequencing code**: `runCommand(line, cmdEl, output, done)` shows a prompt line, types its `data-text`, then adds `.show` to the output element.
-- **Adding a command**: to chain another command after projects, add a new `queued-cmd` line and output element, then call `runCommand` from the previous command's `done` callback in `showSocials()`.
+- **Sequencing code**: `typeOut(text, render, delay, pause, done)` is the shared typewriter. `runCommand(n, output, done)` shows the n-th `queued-cmd` line, types its command, then adds `.show` to the output element. `startTerminal()` chains them.
+- **Adding a command**: to chain another command after projects, add a new `queued-cmd` line and output element, then call `runCommand(2, …)` from the previous command's `done` callback in `startTerminal()`.
 
 ### Accessibility and fallbacks (keep these working)
 
 - **`prefers-reduced-motion`**: all animation is effectively off, and commands and outputs show instantly.
 - **`<noscript>` styles**: everything is visible without JS.
-- **About text and command text** are written into the HTML (for crawlers and no-JS visitors). JS clears them on load and re-types them. **If you change the About text, change it in both the element content and `data-text`.**
+- **About text and command text** are written into the HTML (for crawlers and no-JS visitors). JS reads them from the HTML, clears them on load and re-types them, so the HTML is the single source of truth.
 - **Decorative layers** are `aria-hidden`. The About section has `aria-label="About me"`.
 
 ---
@@ -140,6 +144,7 @@ Timings are tuned; the owner asked for the socials to show quickly.
   - "made with ♥ & a little glitch" in the footer
 - **Text selection highlight is transparent** (`::selection { background: transparent }`).
 - **Avatar ring** uses only the name's colours (white, cyan, magenta).
+- **Avatar hover glitch** runs as a short burst (~1.6s, `img-glitch` × 4), not infinitely. It replays each time the mouse re-enters.
 - **Favicon**: an inline SVG data URI in `<head>`. It's a circle with a white → cyan → magenta gradient and a soft, blurred violet crescent on the bottom-right edge ("more purple, but not 50/50").
 - **`<title>`**: "Matt Hoyle aka Mental.Glitch" (the word "aka", not a dash).
 - **Terminal commands should fit what they show**: `cat` for text, `./socials.sh` for the visual link buttons, `ls` for the projects list.
@@ -152,7 +157,7 @@ Timings are tuned; the owner asked for the socials to show quickly.
 **Add or change a social link.** Update all three places:
 1. The `<a class="link-card …">` in `#socials`. Add a `.link-card.<name> { --brand: … }` rule for a new platform.
 2. `sameAs` in the JSON-LD `<script type="application/ld+json">` in `<head>`.
-3. The card stagger rules (`.links.show .link-card:nth-child(n)`), if you add a fifth card.
+3. The card stagger rules (`.links.show .link-card:nth-child(n)`, shared with project cards), if you add a fifth card.
 
 **Add a project:**
 1. Take a thumbnail:
@@ -167,9 +172,9 @@ Timings are tuned; the owner asked for the socials to show quickly.
    - `src` and `alt`
    - a one-sentence description
    - 1–2 lowercase tags
-4. If there are now more than three cards, add a `.projects-wrap.show .project-card:nth-child(n)` stagger rule.
+4. If there are now more than four cards, extend the shared `:nth-child(n)` stagger rules.
 
-**Change the About text.** Edit the `#about` element content **and** its `data-text`. The phrases in the JS `highlight` array render yellow, so update that array if the wording changes. Also consider updating the matching descriptions in `<meta name="description">`, `og:description`, `twitter:description` and the JSON-LD.
+**Change the About text.** Edit the `#about` element content. The phrases in the JS `highlight` array render yellow, so update that array if the wording changes. Also consider updating the matching descriptions in `<meta name="description">`, `og:description`, `twitter:description` and the JSON-LD.
 
 **Change the domain.** Search and replace `https://matthoyle.me/` across `index.html`, `robots.txt` and `sitemap.xml`. Open Graph and Twitter image URLs must be absolute.
 
