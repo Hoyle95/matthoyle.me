@@ -1,6 +1,6 @@
 # matthoyle.me: project guide
 
-Personal site for **Matt Hoyle, aka "Mental.Glitch"**: a developer based in South East UK, born ’95.
+Personal site for **Matt Hoyle, aka "Mental.Glitch"**: a designer & tinkerer from the UK, born ’95.
 It's one page with a cyberpunk, "digital" look. Live at **https://matthoyle.me/**.
 
 This file is for anyone (human or LLM) picking the project back up. Read **Owner preferences** before
@@ -42,7 +42,7 @@ on a simulated 4G phone: first paint was ~14% faster and full load ~49% faster t
    - `.blob.one/two/three`: large blurred violet, magenta and cyan glows drifting slowly.
    - `.grid-floor`: synthwave perspective grid scrolling along the bottom.
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
-   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.4` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
+   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.5` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
      - **`RESPONSE` and `LOAD`** are real, measured once per visit with the Navigation Timing API. `RESPONSE` is the server response time (`responseStart − requestStart`); it shows `CACHED` if the page came from the browser cache. `LOAD` is the full page load (`loadEventEnd`). Both are shown in ms, or in seconds from 1000ms.
      - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS` / `showSignal()`). Cached counts as full signal.
 
@@ -85,7 +85,7 @@ on a simulated 4G phone: first paint was ~14% faster and full load ~49% faster t
 |---|---|---|
 | `--bg` | `#07030f` | Page background (near-black purple) |
 | `--cyan` | `#00f0ff` | Primary neon: prompts' `:~$`, glitch, rain, cursor dot |
-| `--magenta` | `#ff2bd6` | Secondary neon: caret, cursor ring, HUD corners, About quote bar |
+| `--magenta` | `#ff2bd6` | Secondary neon: caret, cursor ring, HUD corners |
 | `--violet` | `#8a2bff` | Blobs, favicon crescent, `theme-color` (Discord embed bar) |
 | `--yellow` | `#ffe600` | Highlighted words in the About text only |
 | `--text` | `#eae6ff` | Body text |
@@ -164,6 +164,8 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
 
 - **`prefers-reduced-motion`** (a deliberate OS setting, off by default everywhere): there is no intro, no dim overlay, no entrance effects and no delays (`--intro: 0s`; all delays are forced to 0). The whole page fades in once (`page-fade`, 0.5s), and commands and outputs show instantly.
 - **`<noscript>` styles**: everything is visible without JS.
+- **No-JS error banner** (`.js-off`, inside a `<noscript>` at the top of `<main>`): a yellow terminal-style "● ERR_JS_DISABLED" label (no background or border), with a blinking dot, a soft glow and a slight flicker. It fades in with the HUD text after the intro. JS visitors never see or load it.
+  - **768px and wider:** it's pinned top-centre (`position: fixed`), level with the first line of the top HUD corners, in the HUD's type size and spacing.  - **Phones:** there's no room between the top corners, so it sits in the page flow, centred just below them (≤440px adds a top margin to clear them). To preview it in Chrome: DevTools → `Ctrl+Shift+P` → "Disable JavaScript" → reload.
 - **About text and command text** are written into the HTML (for crawlers and no-JS visitors). JS reads them from the HTML, clears them on load and re-types them, so the HTML is the single source of truth.
 - **Decorative layers** are `aria-hidden`. The About section has `aria-label="About me"`.
 
@@ -179,6 +181,7 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
 - **Removed on request; don't re-add:**
   - the "About me" / "Find me online" headings
   - the tag chips in About
+  - the quote bar (left border line) beside the About text
   - the scrolling marquee banner at the bottom
   - the arrows on social buttons
   - the orbiting dots around the avatar
