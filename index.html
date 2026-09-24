@@ -58,6 +58,8 @@
       --text: #eae6ff; --muted: #a79fc9; --border: rgba(255, 255, 255, .12);
       --display: "Orbitron", sans-serif; --body: "Chakra Petch", system-ui, sans-serif; --mono: "JetBrains Mono", monospace;
       --pop: cubic-bezier(.2, 1.4, .4, 1);
+      --intro: .95s; /* the corner-opening intro; page content starts after this */
+      --edge: 14px;  /* HUD corner distance from the screen edges */
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     ::selection { background: transparent; }
@@ -128,7 +130,7 @@
     .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px; }
     .avatar-wrap {
       position: relative; width: 220px; height: 220px; margin-bottom: 24px;
-      opacity: 0; animation: pop-in 1s cubic-bezier(.2, 1.6, .4, 1) .2s forwards;
+      opacity: 0; animation: pop-in 1s cubic-bezier(.2, 1.6, .4, 1) calc(var(--intro) + .2s) forwards;
     }
     /* The sharp ring spins its gradient angle, not the element: a rotating layer can be dropped by mobile GPUs on fast scroll
        and never repainted. The blurred glow can safely rotate on the GPU (cheaper); both take 4s so they stay in sync. */
@@ -164,7 +166,7 @@
     @keyframes char-in { to { opacity: 1; transform: none; } }
     @keyframes shimmer { to { background-position: 300% 0; } }
 
-    .aka { font: .85rem var(--mono); color: var(--muted); letter-spacing: .5em; text-transform: uppercase; opacity: 0; animation: fade-up .8s ease 1.5s forwards; }
+    .aka { font: .85rem var(--mono); color: var(--muted); letter-spacing: .5em; text-transform: uppercase; opacity: 0; animation: fade-up .8s ease calc(var(--intro) + 1.5s) forwards; }
     .aka::before, .aka::after {
       content: ""; display: inline-block; width: 40px; height: 1px; margin: 0 14px; vertical-align: middle;
       background: linear-gradient(90deg, transparent, var(--magenta));
@@ -175,7 +177,7 @@
       position: relative; display: inline-block; white-space: nowrap;
       font: 800 clamp(2rem, 6.5vw, 4rem) var(--display); letter-spacing: .02em; color: #fff;
       text-shadow: 0 0 10px var(--cyan), 0 0 30px rgba(0, 240, 255, .6), 0 0 60px rgba(138, 43, 255, .6);
-      opacity: 0; animation: fade-up .8s ease 1.8s forwards, flicker 6s 3s infinite;
+      opacity: 0; animation: fade-up .8s ease calc(var(--intro) + 1.8s) forwards, flicker 6s calc(var(--intro) + 3s) infinite;
     }
     .glitch::before, .glitch::after { content: attr(data-text); position: absolute; inset: 0; overflow: hidden; }
     .glitch::before { color: var(--magenta); text-shadow: -2px 0 var(--magenta); transform: translateX(-3px); animation: glitch-a 2.4s linear infinite alternate-reverse; }
@@ -263,23 +265,47 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* HUD corners */
-    .hud {
-      z-index: 20; padding: 10px 14px; font: .7rem var(--mono); letter-spacing: .15em; color: rgba(0, 240, 255, .7);
-      opacity: 0; animation: fade-up 1s ease 2.4s forwards;
+    /* Intro: the background starts dimmed and the four corner brackets start as a small frame in the middle of the screen.
+       They open out to the corners, then the HUD text and the page content fade in (everything else waits for --intro). */
+    .intro-dim {
+      position: fixed; inset: 0; z-index: 15; pointer-events: none; background: rgba(7, 3, 15, .8);
+      animation: intro-undim .9s ease var(--intro) forwards;
     }
-    .hud::before { content: ""; position: absolute; width: 18px; height: 18px; border: 0 solid var(--magenta); }
-    .hud.tl { top: 14px; left: 14px; }                         .hud.tl::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
-    .hud.tr { top: 14px; right: 14px; text-align: right; }     .hud.tr::before { top: 0; right: 0; border-width: 2px 2px 0 0; }
-    .hud.bl { bottom: 14px; left: 14px; }                      .hud.bl::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
-    .hud.br { bottom: 14px; right: 14px; text-align: right; }  .hud.br::before { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+    @keyframes intro-undim { to { opacity: 0; visibility: hidden; } }
+
+    /* HUD corners */
+    .hud { z-index: 20; padding: 10px 14px; font: .7rem var(--mono); letter-spacing: .15em; color: rgba(0, 240, 255, .7); }
+    .hud-text { opacity: 0; animation: fade-in .6s ease var(--intro) forwards; }
+    @keyframes fade-in { to { opacity: 1; } }
+    .hud::before {
+      content: ""; position: absolute; width: 18px; height: 18px; border: 0 solid var(--magenta);
+      animation: fade-in .25s ease both, hud-open .75s cubic-bezier(.65, 0, .25, 1) .2s both;
+    }
+    /* each bracket starts 40px from the screen centre (--dx / --dy point it back towards the middle) */
+    @keyframes hud-open {
+      from {
+        transform: translate(calc(var(--dx) * (50vw - var(--edge) - 40px)), calc(var(--dy) * (50vh - var(--edge) - 40px)));
+        transform: translate(calc(var(--dx) * (50vw - var(--edge) - 40px)), calc(var(--dy) * (50dvh - var(--edge) - 40px)));
+      }
+    }
+    .hud.tl { top: var(--edge); left: var(--edge); }                       .hud.tl::before { --dx: 1;  --dy: 1;  top: 0; left: 0; border-width: 2px 0 0 2px; }
+    .hud.tr { top: var(--edge); right: var(--edge); text-align: right; }   .hud.tr::before { --dx: -1; --dy: 1;  top: 0; right: 0; border-width: 2px 2px 0 0; }
+    .hud.bl { bottom: var(--edge); left: var(--edge); }                    .hud.bl::before { --dx: 1;  --dy: -1; bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+    .hud.br { bottom: var(--edge); right: var(--edge); text-align: right; } .hud.br::before { --dx: -1; --dy: -1; bottom: 0; right: 0; border-width: 0 2px 2px 0; }
     .hud .ok { color: #39ff88; }
-    @media (max-width: 700px) { .hud.bl, .hud.br { display: none; } }
-    /* phones: tighten the top corners so the clock lines can't run into "SYS://MENTAL.GLITCH" / "● ONLINE" */
+    /* Below ~1240px the 920px terminal reaches under the bottom corners, so give them a backing (text scrolling under
+       them stays readable). It fades in with the HUD text. On phones, also leave room under the footer. */
+    @media (max-width: 1260px) {
+      .hud.bl, .hud.br { border-radius: 6px; animation: hud-backing .6s ease var(--intro) both; }
+    }
+    @media (max-width: 700px) {
+      body > footer { padding-bottom: 84px; }
+    }
+    @keyframes hud-backing { from { background: transparent; } to { background: rgba(7, 3, 15, .82); } }
+    /* phones: tighten all four corners so the clock lines can't run into "SYS://MENTAL.GLITCH" / "● ONLINE" */
     @media (max-width: 440px) {
+      :root { --edge: 10px; }
       .hud { font-size: .66rem; letter-spacing: .04em; padding: 8px 10px; }
-      .hud.tl { top: 10px; left: 10px; }
-      .hud.tr { top: 10px; right: 10px; }
     }
 
     /* Link + project cards */
@@ -386,10 +412,11 @@
   <div class="grid-floor" aria-hidden="true"></div>
   <div class="scanlines" aria-hidden="true"></div>
   <div class="noise" aria-hidden="true"></div>
-  <div class="hud tl" aria-hidden="true">SYS://MENTAL.GLITCH<br><span class="ok">● ONLINE</span></div>
-  <div class="hud tr" aria-hidden="true"><span id="server-time">SERVER --:--:--</span><br><span id="client-time">CLIENT --:--:--</span><br><span id="time-gap"></span></div>
-  <div class="hud bl" aria-hidden="true">BUILD v1.2<br>FPS <span id="fps">--</span></div>
-  <div class="hud br" aria-hidden="true">LOAD <span id="load">--</span><br>RESPONSE <span id="response">--</span><br>SIGNAL <span id="signal" class="ok">▮▮▮▮▯</span></div>
+  <div class="intro-dim" aria-hidden="true"></div>
+  <div class="hud tl" aria-hidden="true"><span class="hud-text">SYS://MENTAL.GLITCH<br><span class="ok">● ONLINE</span></span></div>
+  <div class="hud tr" aria-hidden="true"><span class="hud-text"><span id="server-time">SERVER --:--:--</span><br><span id="client-time">CLIENT --:--:--</span><br><span id="time-gap"></span></span></div>
+  <div class="hud bl" aria-hidden="true"><span class="hud-text">BUILD v1.3<br>FPS <span id="fps">--</span></span></div>
+  <div class="hud br" aria-hidden="true"><span class="hud-text">LOAD <span id="load">--</span><br>RESPONSE <span id="response">--</span><br>SIGNAL <span id="signal" class="ok">▮▮▮▮▯</span></span></div>
   <div class="cursor-dot" aria-hidden="true"></div>
   <div class="cursor-ring" aria-hidden="true"></div>
 
@@ -480,6 +507,7 @@
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const finePointer = matchMedia("(hover: hover)").matches;
     const CARET = '<span class="caret"></span>';
+    const INTRO = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--intro")); // seconds, from CSS
     $("year").textContent = new Date().getFullYear();
 
     // Name: one span per letter for the flip-in
@@ -489,7 +517,7 @@
       span.className = ch === " " ? "char space" : "char";
       span.textContent = ch === " " ? " " : ch;
       span.setAttribute("aria-hidden", "true");
-      span.style.animationDelay = `${0.5 + i * 0.06}s`;
+      span.style.animationDelay = `${INTRO + 0.5 + i * 0.06}s`;
       span.addEventListener("animationend", () => span.classList.add("done"), { once: true });
       return span;
     }));
@@ -523,7 +551,7 @@
     lockAliasSize();
     addEventListener("resize", lockAliasSize);
     if (!reduceMotion) {
-      setTimeout(() => scramble(1200), 1800);
+      setTimeout(() => scramble(1200), (INTRO + 1.8) * 1000);
       setInterval(scramble, 5000);
       alias.addEventListener("mouseenter", () => scramble(600));
     }
@@ -581,7 +609,7 @@
       }
     }, { rootMargin: "0px 0px -60px 0px" });
     document.querySelectorAll(".panel").forEach((p, i) => {
-      p.dataset.revealAt = 1.4 + i * 0.25;
+      p.dataset.revealAt = INTRO + 1.4 + i * 0.25;
       io.observe(p);
     });
 
@@ -741,10 +769,15 @@
         drops = Array.from({ length: cols }, () => ({ ...newDrop(), y: Math.random() * rows }));
       }
     }
-    buildAtlas();
     resize();
     addEventListener("resize", resize);
-    document.fonts.ready.then(() => { buildAtlas(); lockAliasSize(); });
+    // Build the glyph sheet once the font has loaded (building it earlier would mean doing it twice), then start the
+    // rain. It begins a moment later, during the dimmed intro, which saves slow phones a lot of work while loading.
+    document.fonts.ready.then(() => {
+      buildAtlas();
+      lockAliasSize();
+      requestAnimationFrame(draw);
+    });
 
     let last = performance.now(), frames = 0, fpsTime = last;
     function draw(now) {
@@ -773,7 +806,6 @@
       }
       if (!reduceMotion) requestAnimationFrame(draw);
     }
-    requestAnimationFrame(draw);
   </script>
 </body>
 </html>

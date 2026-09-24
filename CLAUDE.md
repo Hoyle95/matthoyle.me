@@ -20,6 +20,7 @@ changing anything visual; those are decisions that have already been made and re
 | `robots.txt`, `sitemap.xml` | For search engines. Bump `<lastmod>` in the sitemap when content changes. |
 | `tools/serve.ps1` | Local web server (`http://localhost:8765/`) for testing in a browser. |
 | `tools/capture-thumbnail.ps1` | Screenshots a live site into `images/projects/`. |
+| `tools/device-test.ps1` | Emulates 10 phones, tablets and desktops (with touch and a slowed processor on phones) and checks the page on each. See **Testing**. |
 
 Only two things load from outside the site: Google Fonts, and the **GoatCounter** analytics script
 (`<script data-goatcounter="https://hoyle95.goatcounter.com/count" async src="//gc.zgo.at/count.js">` in `<head>`;
@@ -34,7 +35,7 @@ stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the a
    - `.blob.one/two/three`: large blurred violet, magenta and cyan glows drifting slowly.
    - `.grid-floor`: synthwave perspective grid scrolling along the bottom.
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
-   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.2` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
+   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.3` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
      - **`RESPONSE` and `LOAD`** are real, measured once per visit with the Navigation Timing API. `RESPONSE` is the server response time (`responseStart − requestStart`); it shows `CACHED` if the page came from the browser cache. `LOAD` is the full page load (`loadEventEnd`). Both are shown in ms, or in seconds from 1000ms.
      - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS` / `showSignal()`). Cached counts as full signal.
 
@@ -44,7 +45,12 @@ stats at https://hoyle95.goatcounter.com/). Everything else is local. Keep the a
        | under 200ms | 4 | green |
        | under 400ms | 3 | yellow |
        | under 800ms | 2 | orange |
-       | slower | 1 | red | The bottom two are hidden under 700px. At 440px and below, the HUD gets a slightly smaller font and tighter spacing so the top corners don't collide (checked at 320px with the longest time zone).
+       | slower | 1 | red |
+
+     - **Phones:** all four corners show on phones (the owner wants the bottom ones visible too).
+       - **1260px and below:** the 920px terminal reaches under the bottom corners, so they get a dark rounded backing (fading in with their text), which keeps content scrolling under them readable. Wider screens have clear margins and no backing.
+       - **700px and below:** the footer also gets extra bottom padding (`body > footer`) so it sits clear of the corners.
+       - **440px and below:** the HUD gets a slightly smaller font and tighter spacing, so the top corners don't collide (checked at 320px with the longest time zone).
      - **Top-right clock** (three lines, updated every second):
        - `#server-time` shows the owner's UK time, e.g. `SERVER 16:44:09 UTC+1`.
        - `#client-time` shows the visitor's local time, e.g. `CLIENT 11:44:09 UTC-4`.
@@ -124,13 +130,20 @@ Use the CSS variables `--display`, `--body` and `--mono` rather than repeating f
 
 Timings are tuned; the owner asked for the socials to show quickly.
 
-| When | What |
+**Intro (0–0.95s, `--intro`):** the page opens like it's booting up.
+- A dim overlay (`.intro-dim`) covers the background.
+- The four HUD corner brackets appear together as a small 80px frame in the middle of the screen. They then open out to the corners (`hud-open`, 0.2–0.95s, GPU transform; `--dx`/`--dy` per corner, `--edge` = corner inset).
+- At `--intro`, the HUD text (`.hud-text`) fades in, the overlay fades away, and the content below starts.
+
+Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--intro) + …)`; in JS it's the `INTRO` constant, read from the CSS variable. Change `--intro` to lengthen or shorten the intro, and everything else shifts with it.
+
+| When (after the intro) | What |
 |---|---|
-| 0.2s | Avatar pops in |
-| 0.5s + 0.06s/letter | Name letters flip in |
-| 1.5s | "aka" fades up |
-| 1.8s | Alias fades up. It scrambles at 1.8s, then every 5s and on hover. |
-| 1.4s | Terminal panel fades in (`data-revealAt`, counted from page load; panels scrolled to later appear immediately) |
+| +0.2s | Avatar pops in |
+| +0.5s + 0.06s/letter | Name letters flip in |
+| +1.5s | "aka" fades up |
+| +1.8s | Alias fades up. It scrambles then, every 5s, and on hover. |
+| +1.4s | Terminal panel fades in (`data-revealAt`, counted from page load; panels scrolled to later appear immediately) |
 | +0.2s | About types at 9–18ms/char |
 | +0.15s | `./socials.sh` types at 25–50ms/char. Output appears 120ms later, cards staggered 0.07s. |
 | +0.45s | `ls ~/projects` types, then project cards appear (staggered 0.07s) |
@@ -202,6 +215,12 @@ Timings are tuned; the owner asked for the socials to show quickly.
 
 ## Testing
 
+- **Device test (run it after visual or layout changes)**: start `tools\serve.ps1`, then run `powershell -NoProfile -ExecutionPolicy Bypass -File tools\device-test.ps1`. Every device should show:
+  - `errors: none`, `sequenceDone` / `cardsShown` / `nameOneLine` / `hudCornersIn` / `bottomCornersReadable` / `footerClear` all true
+  - `horizontalOverflow: 0`
+  - `hudTopOverlap` / `hudBottomOverlap` false
+
+  Options: `-Only "iPhone 14"`, `-ReducedMotion`, `-NoJs`, `-Shots`. The first frame or two on phones is the initial page build (typically 50–250ms at 4× CPU), which is expected. The intro animation runs on the GPU, so it isn't held up. It can't test Safari or Firefox; check those on real devices.
 - **Local server**: run `powershell -NoProfile -ExecutionPolicy Bypass -File tools\serve.ps1`, then open `http://localhost:8765/`. Browser extensions (Claude in Chrome) refuse `file://` URLs.
 - **Chrome background throttling**: Chrome throttles tabs it treats as background, so the FPS HUD reads ~1 and the typing crawls. That isn't a bug in the page. To fast-forward the sequence from the console, run:
   ```js
