@@ -46,7 +46,7 @@ on a simulated 4G phone: first paint was ~14% faster and full load ~49% faster t
    - `.blob.one/two/three`: large blurred violet, magenta and cyan glows drifting slowly.
    - `.grid-floor`: synthwave perspective grid scrolling along the bottom.
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
-   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.5` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
+   - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.6` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
      - **`RESPONSE` and `LOAD`** are real, measured once per visit with the Navigation Timing API. `RESPONSE` is the server response time (`responseStart − requestStart`); it shows `CACHED` if the page came from the browser cache. `LOAD` is the full page load (`loadEventEnd`). Both are shown in ms, or in seconds from 1000ms.
      - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS`, applied in the page's `load` handler). Cached counts as full signal.
 
@@ -254,3 +254,7 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
 
 The owner commits themselves, with short lowercase messages (e.g. `no wrap`,
 `load animation is faster, selection highlight colour is now transparent`). Don't commit unless asked.
+
+**Always bump the build number before committing.** It's the `BUILD v1.x` in the bottom-left HUD (`.hud.bl` in
+`index.html`) and in this file's **Page structure** section. Go up by 0.1, and end the commit message with the build
+(e.g. `…, build v1.6`).
