@@ -15,7 +15,9 @@ changing anything visual; those are decisions that have already been made and re
 | `index.html` | The whole site. HTML, CSS (in `<style>`) and JS (in `<script>` at the end) in one file. No build step, no dependencies. |
 | `images/me.webp` | Profile photo, full size (1000px). |
 | `images/me-512.jpg` | 512px copy of the photo. Chosen via `srcset` for most screens, since it's shown at 170–220px. Regenerate it if the photo changes. |
-| `images/me.jpg` | JPEG copy of the same photo, used **only** for link previews (Open Graph / Twitter). Some platforms don't reliably show WebP. |
+| `images/me.jpg` | JPEG copy of the same photo, used only as the `image` in the JSON-LD (search engines). |
+| `images/og-card.jpg` | 1200×630 link-preview banner (Open Graph / Twitter `summary_large_image`), in the site's style. **Generated**: edit `tools/og-card.html`, then run `tools/render-images.ps1`. |
+| `apple-touch-icon.png` | 180×180 iPhone/iPad home-screen icon (the favicon's circle on the dark background). **Generated** from `tools/touch-icon.html` by `tools/render-images.ps1`. |
 | `images/projects/*.jpg` | Project thumbnails, 800×500 screenshots taken at a 1280×800 viewport. Made with `tools/capture-thumbnail.ps1`. |
 | `robots.txt`, `sitemap.xml` | For search engines. Bump `<lastmod>` in the sitemap when content changes. |
 | `fonts/*.woff2` | Self-hosted fonts (Latin subsets from Google Fonts, SIL Open Font License): Orbitron 800–900 (one file), Chakra Petch 400, JetBrains Mono 400. Declared with `@font-face` at the top of the `<style>`, and preloaded in `<head>`. |
@@ -23,6 +25,8 @@ changing anything visual; those are decisions that have already been made and re
 | `tools/serve.ps1` | Local web server (`http://localhost:8765/`) for testing in a browser. |
 | `tools/capture-thumbnail.ps1` | Screenshots a live site into `images/projects/`. |
 | `tools/device-test.ps1` | Emulates 10 phones, tablets and desktops (with touch and a slowed processor on phones) and checks the page on each. See **Testing**. |
+| `tools/og-card.html`, `tools/touch-icon.html` | Sources for the two generated images above. They use the site's fonts, colours and effects, frozen as a still frame. |
+| `tools/render-images.ps1` | Renders both with headless Edge (no server needed). **Re-run it after changing the name, tagline, photo or favicon.** |
 
 **Everything the page loads is self-hosted.** The only outside connection is the GoatCounter pageview report, sent to
 `https://hoyle95.goatcounter.com/count` (stats at https://hoyle95.goatcounter.com/). Keep it that way. It was measured
@@ -44,7 +48,7 @@ on a simulated 4G phone: first paint was ~14% faster and full load ~49% faster t
    - `.scanlines` (with a sweeping light bar) and `.noise` (film grain).
    - `.hud.tl/.tr/.bl/.br`: corner readouts: status, clock (top right), `BUILD v1.5` and FPS (`#fps`), and `LOAD` / `RESPONSE` / `SIGNAL` bars (bottom right).
      - **`RESPONSE` and `LOAD`** are real, measured once per visit with the Navigation Timing API. `RESPONSE` is the server response time (`responseStart − requestStart`); it shows `CACHED` if the page came from the browser cache. `LOAD` is the full page load (`loadEventEnd`). Both are shown in ms, or in seconds from 1000ms.
-     - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS` / `showSignal()`). Cached counts as full signal.
+     - **`SIGNAL` bars** follow the server response time (`SIGNAL_LEVELS`, applied in the page's `load` handler). Cached counts as full signal.
 
        | Response | Bars | Colour |
        |---|---|---|
@@ -55,7 +59,6 @@ on a simulated 4G phone: first paint was ~14% faster and full load ~49% faster t
        | slower | 1 | red |
 
      - **Phones:** all four corners show on phones (the owner wants the bottom ones visible too).
-       - **1260px and below:** the 920px terminal reaches under the bottom corners, so they get a dark rounded backing (fading in with their text), which keeps content scrolling under them readable. Wider screens have clear margins and no backing.
        - **700px and below:** the footer also gets extra bottom padding (`body > footer`) so it sits clear of the corners.
        - **440px and below:** the HUD gets a slightly smaller font and tighter spacing, so the top corners don't collide (checked at 320px with the longest time zone).
      - **Top-right clock** (three lines, updated every second):
@@ -132,6 +135,7 @@ Use the CSS variables `--display`, `--body` and `--mono` rather than repeating f
 - **Project card** (`a.project-card`): a fake browser bar with the domain over the screenshot (scanlines and a brand tint that clear on hover, plus a quick glitch), then title, one-line description and 1–2 lowercase tags. It has the same tilt and spotlight as link cards (shared JS).
 - **Links** to external sites use `target="_blank" rel="me noopener"` on the socials, so profiles can verify ownership, and `rel="noopener"` on projects.
 - **Glow style**: neon via layered `text-shadow`/`box-shadow` in the element's own colour. Hover states brighten borders to `--brand`.
+- **Keyboard focus** (`:focus-visible`, so it never shows for mouse clicks): a 2px neon outline, cyan by default. Link and project cards use their own `--brand` colour, plus their hover glow. Keep it for any new links or controls.
 
 ---
 
@@ -181,6 +185,7 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
 - **Removed on request; don't re-add:**
   - the "About me" / "Find me online" headings
   - the tag chips in About
+  - the dark backing behind the bottom HUD corners on smaller screens (content now scrolls visibly under them)
   - the quote bar (left border line) beside the About text
   - the scrolling marquee banner at the bottom
   - the arrows on social buttons
@@ -219,7 +224,7 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
    - 1–2 lowercase tags
 4. If there are now more than four cards, extend the shared `:nth-child(n)` stagger rules.
 
-**Change the About text.** Edit the `#about` element content. The phrases in the JS `highlight` array render yellow, so update that array if the wording changes. Also consider updating the matching descriptions in `<meta name="description">`, `og:description`, `twitter:description` and the JSON-LD.
+**Change the About text.** Edit the `#about` element content. The phrases in the JS `highlight` array render yellow, so update that array if the wording changes. Also consider updating the matching descriptions in `<meta name="description">`, `og:description`, `twitter:description` and the JSON-LD. If the tagline changes, update `tools/og-card.html` and re-run `tools/render-images.ps1`. Bump `<lastmod>` in `sitemap.xml`.
 
 **Change the domain.** Search and replace `https://matthoyle.me/` across `index.html`, `robots.txt` and `sitemap.xml`. Open Graph and Twitter image URLs must be absolute.
 
@@ -228,7 +233,7 @@ Everything after the intro is offset by `--intro`. In CSS that's `calc(var(--int
 ## Testing
 
 - **Device test (run it after visual or layout changes)**: start `tools\serve.ps1`, then run `powershell -NoProfile -ExecutionPolicy Bypass -File tools\device-test.ps1`. Every device should show:
-  - `errors: none`, `sequenceDone` / `cardsShown` / `nameOneLine` / `hudCornersIn` / `bottomCornersReadable` / `footerClear` all true
+  - `errors: none`, `sequenceDone` / `cardsShown` / `nameOneLine` / `hudCornersIn` / `footerClear` all true
   - `horizontalOverflow: 0`
   - `hudTopOverlap` / `hudBottomOverlap` false
 

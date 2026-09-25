@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!-- Link-preview banner (Open Graph / Twitter). Rendered to images/og-card.jpg at 1200x630 by tools/render-images.ps1.
+     A still frame in the site's style: same fonts, colours, rain, grid floor, HUD brackets, avatar ring and glitch text. -->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face { font-family: "Orbitron"; font-weight: 800 900; src: url("../fonts/orbitron-latin.woff2") format("woff2"); }
+  @font-face { font-family: "Chakra Petch"; font-weight: 400; src: url("../fonts/chakra-petch-latin.woff2") format("woff2"); }
+  @font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url("../fonts/jetbrains-mono-latin.woff2") format("woff2"); }
+  :root {
+    --bg: #07030f; --cyan: #00f0ff; --magenta: #ff2bd6; --violet: #8a2bff; --yellow: #ffe600; --text: #eae6ff; --muted: #a79fc9;
+    --display: "Orbitron", sans-serif; --body: "Chakra Petch", sans-serif; --mono: "JetBrains Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; background: var(--bg); }
+  body { position: relative; color: var(--text); font-family: var(--body); }
+
+  /* background */
+  .glow { position: absolute; inset: 0;
+    background:
+      radial-gradient(520px 420px at 8% 0%, rgba(138, 43, 255, .55), transparent 70%),
+      radial-gradient(520px 420px at 100% 100%, rgba(255, 43, 214, .42), transparent 70%),
+      radial-gradient(420px 320px at 72% 45%, rgba(0, 240, 255, .12), transparent 70%); }
+  #rain { position: absolute; inset: 0; opacity: .45;
+    -webkit-mask-image: radial-gradient(ellipse at 55% 50%, rgba(0, 0, 0, .25), #000 75%);
+            mask-image: radial-gradient(ellipse at 55% 50%, rgba(0, 0, 0, .25), #000 75%); }
+  .floor { position: absolute; left: -50%; right: -50%; bottom: 0; height: 42%; perspective: 300px;
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%); mask-image: linear-gradient(to top, #000 10%, transparent 90%); }
+  .floor::before { content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(to right, rgba(255, 43, 214, .5) 1px, transparent 1px), linear-gradient(rgba(0, 240, 255, .5) 1px, transparent 1px);
+    background-size: 60px 60px; transform: rotateX(65deg); transform-origin: bottom; }
+  .scanlines { position: absolute; inset: 0; z-index: 5; background: repeating-linear-gradient(rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px); }
+
+  /* HUD corners */
+  .hud { position: absolute; z-index: 4; padding: 12px 16px; font: 13px var(--mono); letter-spacing: .15em; color: rgba(0, 240, 255, .75); }
+  .hud::before { content: ""; position: absolute; width: 22px; height: 22px; border: 0 solid var(--magenta); }
+  .hud.tl { top: 22px; left: 22px; }                        .hud.tl::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+  .hud.tr { top: 22px; right: 22px; text-align: right; }    .hud.tr::before { top: 0; right: 0; border-width: 2px 2px 0 0; }
+  .hud.bl { bottom: 22px; left: 22px; }                     .hud.bl::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+  .hud.br { bottom: 22px; right: 22px; text-align: right; } .hud.br::before { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+  .ok { color: #39ff88; }
+
+  /* content */
+  main { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 64px; padding: 0 70px; }
+  .avatar-wrap { position: relative; flex: none; width: 270px; height: 270px; }
+  .avatar-wrap::before, .avatar-wrap::after { content: ""; position: absolute; inset: -11px; border-radius: 50%;
+    background: conic-gradient(from 200deg, #fff, var(--cyan), var(--magenta), #fff); }
+  .avatar-wrap::after { filter: blur(30px); opacity: .8; }
+  .avatar { position: absolute; inset: 0; z-index: 2; border-radius: 50%; overflow: hidden; border: 6px solid var(--bg); }
+  .avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  .text { display: flex; flex-direction: column; align-items: flex-start; }
+  .name { font: 900 70px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+    background: linear-gradient(100deg, #fff 10%, var(--cyan) 55%, var(--magenta) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .aka { margin: 20px 0 14px; font: 15px var(--mono); letter-spacing: .5em; color: var(--muted); text-transform: uppercase; }
+  .aka::before, .aka::after { content: ""; display: inline-block; width: 40px; height: 1px; margin: 0 14px; vertical-align: middle; background: linear-gradient(90deg, transparent, var(--magenta)); }
+  .aka::before { margin-left: 0; }
+  .aka::after { background: linear-gradient(90deg, var(--magenta), transparent); }
+  /* "Mental.Glitch" frozen mid-glitch: RGB-split slices, like the live page */
+  .glitch { position: relative; font: 800 58px/1.1 var(--display); letter-spacing: .02em; color: #fff; white-space: nowrap;
+    text-shadow: 0 0 10px var(--cyan), 0 0 30px rgba(0, 240, 255, .6), 0 0 60px rgba(138, 43, 255, .6); }
+  .glitch::before, .glitch::after { content: attr(data-text); position: absolute; inset: 0; overflow: hidden; }
+  .glitch::before { color: var(--magenta); text-shadow: -2px 0 var(--magenta); transform: translateX(-5px); clip-path: inset(18% 0 60% 0); }
+  .glitch::after { color: var(--cyan); text-shadow: 2px 0 var(--cyan); transform: translateX(5px); clip-path: inset(62% 0 14% 0); }
+  .tagline { margin-top: 26px; font: 25px/1.4 var(--body); color: var(--text); }
+  .tagline .hl { color: var(--yellow); text-shadow: 0 0 12px rgba(255, 230, 0, .5); }
+  .url { margin-top: 22px; padding: 8px 22px; border: 1px solid rgba(0, 240, 255, .45); border-radius: 999px;
+    background: rgba(5, 2, 14, .6); box-shadow: 0 0 24px rgba(0, 240, 255, .2);
+    font: 500 22px var(--body); letter-spacing: .04em; color: var(--cyan); text-shadow: 0 0 10px rgba(0, 240, 255, .7); }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <canvas id="rain" width="1200" height="630"></canvas>
+  <div class="floor"></div>
+  <div class="hud tl">SYS://MENTAL.GLITCH<br><span class="ok">● ONLINE</span></div>
+  <div class="hud tr">SIGNAL <span class="ok">▮▮▮▮▮</span></div>
+  <div class="hud bl"></div>
+  <div class="hud br"></div>
+  <main>
+    <div class="avatar-wrap"><div class="avatar"><img src="../images/me-512.jpg" alt=""></div></div>
+    <div class="text">
+      <div class="name">Matt Hoyle</div>
+      <div class="aka">aka</div>
+      <div class="glitch" data-text="Mental.Glitch">Mental.Glitch</div>
+      <div class="tagline"><span class="hl">Designer &amp; tinkerer</span> from the <span class="hl">UK</span></div>
+      <div class="url">matthoyle.me</div>
+    </div>
+  </main>
+  <div class="scanlines"></div>
+  <script>
+    // A still frame of the site's digital rain. Seeded, so every render is identical.
+    let seed = 1995;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEF{}[]<>/=;$#&*+";
+    document.fonts.ready.then(() => {
+      const ctx = document.getElementById("rain").getContext("2d"), FS = 16;
+      ctx.font = `${FS}px "JetBrains Mono", monospace`;
+      ctx.textBaseline = "top";
+      for (let x = 0; x < 1200; x += FS) {
+        if (rand() < 0.25) continue;
+        const len = 8 + (rand() * 22 | 0), head = (rand() * 50 | 0) - 5, hot = rand() < 0.15;
+        for (let k = 0; k < len; k++) {
+          const r = head - k;
+          if (r < 0 || r > 40) continue;
+          ctx.globalAlpha = (1 - k / len) * (k ? (hot ? .56 : .45) : .7);
+          ctx.fillStyle = k ? (hot ? "#ff2bd6" : "#00f0ff") : "#ebffff";
+          ctx.fillText(chars[rand() * chars.length | 0], x, r * FS);
+        }
+      }
+      window.__ready = true;
+    });
+  </script>
+</body>
+</html>

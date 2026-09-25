@@ -60,7 +60,6 @@ $checks = @'
     introJankFrames: introGaps.filter(g => g > 50).length,
     slowFrames: __frames.slice(1).map((t, i) => [Math.round(__frames[i]), Math.round(t - __frames[i])]).filter(([, g]) => g > 50).map(([s, g]) => g + 'ms@' + s).join(' '),
     firstFrameAt: Math.round(__frames[1] || 0),
-    bottomCornersReadable: ['.hud.bl', '.hud.br'].every(s => { const h = box(s), p = box('.panel'); const underContent = h.left < p.right && p.left < h.right; const backing = getComputedStyle(q(s), '::after'); return !underContent || (backing.content !== 'none' && backing.backgroundColor !== 'rgba(0, 0, 0, 0)' && backing.opacity === '1'); }),
     hudHasText: q('#server-time').textContent.startsWith('SERVER ') && q('#load').textContent !== '--',
   };
   scrollTo(0, document.documentElement.scrollHeight);
